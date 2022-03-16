@@ -3,6 +3,7 @@ users:
   - name: matt
     groups: users
     sudo: ALL=(ALL) NOPASSWD:ALL
+    lock_passwd: false
     passwd: $6$Xb0trHnV7gPgv$CLcddQ.UYU/0RoOsbApbLEBKT1dd2PwMNyTo0c0EHA/aVnDsejBlN1MvNuEYL/WOjhOiHQZa6K676/sG945.R.
     shell: /bin/bash
     ssh_authorized_keys:
