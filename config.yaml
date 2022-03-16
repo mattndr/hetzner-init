@@ -8,6 +8,7 @@ users:
     # mkpasswd --method=SHA-512 --rounds=4096
     #passwd: $6$rounds=4096$/0wIEGp9R1OsLvW$TL2HWYKnze.Qwl5sfs7SLAlyKoDpXpDsgu7SGKSbQWfacRgH1hg/80yNLPfqfa2FUz556aYDKrBRF9UQyLMp6/
     shell: /bin/bash
+    # Authorized keys (public SSH keys) for the user 
     ssh_authorized_keys:
       - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDUhMn1/qjoLLPTaj973UB1YBA8tdgRgCZFXEa+XxI66 matt@mattndr
 packages:
