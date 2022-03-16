@@ -1,9 +1,12 @@
 #cloud-config
 users:
+  # Create user with sudo privileges
   - name: matt
-    groups: users
+    groups: sudo
     sudo: ALL=(ALL) NOPASSWD:ALL
-#    passwd: $6$Xb0trHnV7gPgv$CLcddQ.UYU/0RoOsbApbLEBKT1dd2PwMNyTo0c0EHA/aVnDsejBlN1MvNuEYL/WOjhOiHQZa6K676/sG945.R.
+    #lock_passwd: false
+    # mkpasswd --method=SHA-512 --rounds=4096
+    #passwd: $6$rounds=4096$/0wIEGp9R1OsLvW$TL2HWYKnze.Qwl5sfs7SLAlyKoDpXpDsgu7SGKSbQWfacRgH1hg/80yNLPfqfa2FUz556aYDKrBRF9UQyLMp6/
     shell: /bin/bash
     ssh_authorized_keys:
       - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDUhMn1/qjoLLPTaj973UB1YBA8tdgRgCZFXEa+XxI66 matt@mattndr
@@ -12,14 +15,26 @@ packages:
 package_update: true
 package_upgrade: false
 runcmd:
-  - printf "[sshd]\nenabled = true\nbanaction = iptables-multiport" > /etc/fail2ban/jail.local
+# https://community.hetzner.com/tutorials/securing-ssh
   - systemctl enable fail2ban
+  - printf "[sshd]\nenabled = true\nbanaction = iptables-multiport\nport = 22" > /etc/fail2ban/jail.local
+#- sed -i -e '/^backend = /s/^.*$/backend = systemd/' /etc/fail2ban/jail.conf
+  - systemctl restart fail2ban 
+  - sed -i -e '/^#ClientAliveInterval/s/^.*$/ClientAliveInterval 300/' /etc/ssh/sshd_config
+  - sed -i -e '/^#ClientAliveCountMax/s/^.*$/ClientAliveCountMax 1/' /etc/ssh/sshd_config
   - sed -i -e '/^PermitRootLogin/s/^.*$/PermitRootLogin no/' /etc/ssh/sshd_config
   - sed -i -e '/^PasswordAuthentication/s/^.*$/PasswordAuthentication no/' /etc/ssh/sshd_config
-  - sed -i -e '/^X11Forwarding/s/^.*$/X11Forwarding no/' /etc/ssh/sshd_config
-  - sed -i -e '/^#MaxAuthTries/s/^.*$/MaxAuthTries 20/' /etc/ssh/sshd_config
-  - sed -i -e '/^#AllowTcpForwarding/s/^.*$/AllowTcpForwarding no/' /etc/ssh/sshd_config
-  - sed -i -e '/^#AllowAgentForwarding/s/^.*$/AllowAgentForwarding no/' /etc/ssh/sshd_config
+  - sed -i -e '/^#MaxAuthTries/s/^.*$/MaxAuthTries 2/' /etc/ssh/sshd_config
   - sed -i -e '/^#AuthorizedKeysFile/s/^.*$/AuthorizedKeysFile .ssh\/authorized_keys/' /etc/ssh/sshd_config
+# Change default port for SSH (you also need to change the port specified in /etc/fail2ban/jail.local)
+# - sed -i 's/[#]*Port 22/Port 4422/g' /etc/ssh/sshd_config
+# Disables remote GUI view
+  - sed -i -e '/^X11Forwarding/s/^.*$/X11Forwarding no/' /etc/ssh/sshd_config
+# Disables port forwarding
+  - sed -i -e '/^#AllowTcpForwarding/s/^.*$/AllowTcpForwarding no/' /etc/ssh/sshd_config
+# Disables the forwarding of the SSH login
+  - sed -i -e '/^#AllowAgentForwarding/s/^.*$/AllowAgentForwarding no/' /etc/ssh/sshd_config
+# Only selected users are allowed to establish an SSH connection to the server
   - sed -i '$a AllowUsers matt' /etc/ssh/sshd_config
-  - reboot
+# Apply changes
+  - systemctl restart sshd
