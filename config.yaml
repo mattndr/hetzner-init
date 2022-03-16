@@ -19,7 +19,7 @@ runcmd:
 # https://community.hetzner.com/tutorials/securing-ssh
   - systemctl enable fail2ban
   - printf "[sshd]\nenabled = true\nbanaction = iptables-multiport\nport = 22" > /etc/fail2ban/jail.local
-  - sed -i -e '/^backend = /s/^.*$/backend = systemd/' /etc/fail2ban/jail.conf
+#  - sed -i -e '/^backend = /s/^.*$/backend = systemd/' /etc/fail2ban/jail.conf
   - systemctl restart fail2ban 
   - sed -i -e '/^#ClientAliveInterval/s/^.*$/ClientAliveInterval 300/' /etc/ssh/sshd_config
   - sed -i -e '/^#ClientAliveCountMax/s/^.*$/ClientAliveCountMax 1/' /etc/ssh/sshd_config
