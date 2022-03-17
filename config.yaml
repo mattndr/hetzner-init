@@ -4,9 +4,6 @@ users:
   - name: matt
     groups: sudo
     sudo: ALL=(ALL) NOPASSWD:ALL
-    #lock_passwd: false
-    # mkpasswd --method=SHA-512 --rounds=4096
-    #passwd: $6$rounds=4096$/0wIEGp9R1OsLvW$TL2HWYKnze.Qwl5sfs7SLAlyKoDpXpDsgu7SGKSbQWfacRgH1hg/80yNLPfqfa2FUz556aYDKrBRF9UQyLMp6/
     shell: /bin/bash
     # Authorized keys (public SSH keys) for the user 
     ssh_authorized_keys:
@@ -19,10 +16,10 @@ package_update: true
 package_upgrade: false
 runcmd:
 # https://community.hetzner.com/tutorials/securing-ssh
-  - printf "[sshd]\nenabled = true\nbanaction = iptables-multiport\nport = 22" > /etc/fail2ban/jail.local
-#  - sed -i -e '/^backend = /s/^.*$/backend = systemd/' /etc/fail2ban/jail.conf
-  - systemctl enable fail2ban
-  - systemctl restart fail2ban 
+  - cp /etc/fail2ban/jail.conf /etc/fail2ban/jail.local
+  - sed -i -e '/^\[sshd\]/s/^.*$/\[sshd\]\n\nenabled = true\nbanaction = iptables-multiport/' /etc/fail2ban/jail.local
+  - sed -i -e 's/= ssh/= 22/g' /etc/fail2ban/jail.local
+  - systemctl restart fail2ban
   - sed -i -e '/^#ClientAliveInterval/s/^.*$/ClientAliveInterval 300/' /etc/ssh/sshd_config
   - sed -i -e '/^#ClientAliveCountMax/s/^.*$/ClientAliveCountMax 1/' /etc/ssh/sshd_config
   - sed -i -e '/^PermitRootLogin/s/^.*$/PermitRootLogin no/' /etc/ssh/sshd_config
@@ -41,7 +38,7 @@ runcmd:
   - sed -i '$a AllowUsers matt' /etc/ssh/sshd_config
 # Apply changes
   - systemctl restart sshd
+# Switch to new user
   - su - matt
-#  - sudo apt-get install -y apparmor apparmor-utils
-  - curl -fL https://5c2a-93-34-239-170.ngrok.io/system-agent-install.sh | sudo  sh -s - --server https://5c2a-93-34-239-170.ngrok.io --label 'cattle.io/os=linux' --token xfdm6t4ddmq45dx2gqfgcjggz84fp27h7zl4pq7mfbjz8rjfq9pn2t --worker
-
+# Join the RKE2 cluster
+  - 
