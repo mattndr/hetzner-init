@@ -9,6 +9,7 @@ users:
     ssh_authorized_keys:
       - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDUhMn1/qjoLLPTaj973UB1YBA8tdgRgCZFXEa+XxI66 matt@mattndr
 packages:
+  - ntp
   - fail2ban
   - apparmor
   - apparmor-utils
