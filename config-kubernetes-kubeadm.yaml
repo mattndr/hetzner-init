@@ -17,8 +17,8 @@ package_update: true
 package_upgrade: false
 write_files:
   - path: /home/matt/init.sh
-    permissions: 0744
-    owner: matt
+    permissions: '0700'
+    #owner: matt
     content: |
       #!/bin/bash
 
