@@ -103,7 +103,7 @@ runcmd:
   - sed -i '$a AllowUsers matt' /etc/ssh/sshd_config
 # Apply changes
   - systemctl restart sshd
-  - mv ./init.sh /home/matt/init.sh && sudo chown matt:matt /home/matt/init.sh
+  - mv ./init.sh /home/matt/ && sudo chown matt:matt /home/matt/init.sh
 # Switch to new user
   - su - matt
 # Join the RKE2 cluster
