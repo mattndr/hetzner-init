@@ -1,0 +1,111 @@
+#cloud-config
+users:
+  # Create user with sudo privileges
+  - name: ubuntu
+    groups: sudo
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    shell: /bin/bash
+    # Authorized keys (public SSH keys) for the user
+    ssh_authorized_keys:
+      - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDUhMn1/qjoLLPTaj973UB1YBA8tdgRgCZFXEa+XxI66 matt@mattndr
+packages:
+  - ntp
+  - fail2ban
+  - apparmor
+  - apparmor-utils
+package_update: true
+package_upgrade: false
+write_files:
+  - path: /home/ubuntu/init.sh
+    permissions: 0744
+    owner: ubuntu
+    content: |
+      #!/bin/bash
+
+      export DEBIAN_FRONTEND=noninteractive
+      export K8S_VERSION=1.22.5
+      export CONTAINERD_VERSION=1.5.8
+
+      ################################################
+
+      ## Make sure that required modules are loaded
+      sudo modprobe br_netfilter
+      sudo modprobe overlay
+
+      ## Let iptables see bridged traffic
+      cat <<EOF | sudo tee /etc/modules-load.d/k8s.conf
+      br_netfilter
+      EOF
+
+      cat <<EOF | sudo tee /etc/sysctl.d/k8s.conf
+      net.bridge.bridge-nf-call-ip6tables = 1
+      net.bridge.bridge-nf-call-iptables = 1
+      EOF
+
+      ## Containerd prerequisites
+      cat <<EOF | sudo tee /etc/modules-load.d/containerd.conf
+      overlay
+      br_netfilter
+      EOF
+
+      # Setup required sysctl params, these persist across reboots.
+      cat <<EOF | sudo tee /etc/sysctl.d/99-kubernetes-cri.conf
+      net.bridge.bridge-nf-call-iptables  = 1
+      net.ipv4.ip_forward                 = 1
+      net.bridge.bridge-nf-call-ip6tables = 1
+      EOF
+
+      ## Apply sysctl params without reboot
+      sudo sysctl --system
+
+      ## Containerd
+      wget https://github.com/containerd/containerd/releases/download/v$CONTAINERD_VERSION/cri-containerd-cni-$CONTAINERD_VERSION-linux-amd64.tar.gz
+      sudo tar --no-overwrite-dir -C / -xzf cri-containerd-cni-$CONTAINERD_VERSION-linux-amd64.tar.gz
+      sudo systemctl daemon-reload
+      sudo systemctl enable --now containerd
+
+      sleep 5
+      sudo mkdir -p /etc/containerd
+      containerd config default | sudo tee /etc/containerd/config.toml
+      # Use the systemd cgroup driver
+      sudo sed -i 's/SystemdCgroup = false/SystemdCgroup = true/' /etc/containerd/config.toml
+
+      sudo systemctl restart containerd
+
+      ## Kubelet, kubeadm, kubectl
+      sudo apt-get install -y apt-transport-https ca-certificates curl
+      sudo curl -fsSLo /usr/share/keyrings/kubernetes-archive-keyring.gpg https://packages.cloud.google.com/apt/doc/apt-key.gpg
+      echo "deb [signed-by=/usr/share/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-xenial main" | sudo tee /etc/apt/sources.list.d/kubernetes.list
+
+      sudo apt-get update
+      sudo apt-get install -y kubelet=$K8S_VERSION-00 kubeadm=$K8S_VERSION-00 kubectl=$K8S_VERSION-00
+      sudo apt-mark hold kubelet kubeadm kubectl
+
+runcmd:
+  # https://community.hetzner.com/tutorials/securing-ssh
+  - cp /etc/fail2ban/jail.conf /etc/fail2ban/jail.local
+  - sed -i -e '/^\[sshd\]/s/^.*$/\[sshd\]\n\nenabled = true\nbanaction = iptables-multiport/' /etc/fail2ban/jail.local
+  - sed -i -e 's/= ssh/= 22/g' /etc/fail2ban/jail.local
+  - systemctl restart fail2ban
+  - sed -i -e '/^#ClientAliveInterval/s/^.*$/ClientAliveInterval 300/' /etc/ssh/sshd_config
+  - sed -i -e '/^#ClientAliveCountMax/s/^.*$/ClientAliveCountMax 1/' /etc/ssh/sshd_config
+  - sed -i -e '/^PermitRootLogin/s/^.*$/PermitRootLogin no/' /etc/ssh/sshd_config
+  - sed -i -e '/^PasswordAuthentication/s/^.*$/PasswordAuthentication no/' /etc/ssh/sshd_config
+  - sed -i -e '/^#MaxAuthTries/s/^.*$/MaxAuthTries 2/' /etc/ssh/sshd_config
+  - sed -i -e '/^#AuthorizedKeysFile/s/^.*$/AuthorizedKeysFile .ssh\/authorized_keys/' /etc/ssh/sshd_config
+  # Change default port for SSH (you also need to change the port specified in /etc/fail2ban/jail.local)
+  # - sed -i 's/[#]*Port 22/Port 4422/g' /etc/ssh/sshd_config
+  # Disables remote GUI view
+  - sed -i -e '/^X11Forwarding/s/^.*$/X11Forwarding no/' /etc/ssh/sshd_config
+  # Disables port forwarding
+  - sed -i -e '/^#AllowTcpForwarding/s/^.*$/AllowTcpForwarding no/' /etc/ssh/sshd_config
+  # Disables the forwarding of the SSH login
+  - sed -i -e '/^#AllowAgentForwarding/s/^.*$/AllowAgentForwarding no/' /etc/ssh/sshd_config
+  # Only selected users are allowed to establish an SSH connection to the server
+  - sed -i '$a AllowUsers matt' /etc/ssh/sshd_config
+  # Apply changes
+  - systemctl restart sshd
+  # Switch to new user
+  - su - ubuntu
+  # Run
+  - bash /home/ubuntu/init.sh
