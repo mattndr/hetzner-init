@@ -1,7 +1,7 @@
 #cloud-config
 users:
   # Create user with sudo privileges
-  - name: ubuntu
+  - name: matt
     groups: sudo
     sudo: ALL=(ALL) NOPASSWD:ALL
     shell: /bin/bash
@@ -18,7 +18,7 @@ package_upgrade: false
 write_files:
   - path: /home/ubuntu/init.sh
     permissions: 0744
-    owner: ubuntu
+    owner: matt
     content: |
       #!/bin/bash
 
@@ -91,7 +91,7 @@ runcmd:
   - sed -i -e '/^#ClientAliveCountMax/s/^.*$/ClientAliveCountMax 1/' /etc/ssh/sshd_config
   - sed -i -e '/^PermitRootLogin/s/^.*$/PermitRootLogin no/' /etc/ssh/sshd_config
   - sed -i -e '/^PasswordAuthentication/s/^.*$/PasswordAuthentication no/' /etc/ssh/sshd_config
-  - sed -i -e '/^#MaxAuthTries/s/^.*$/MaxAuthTries 2/' /etc/ssh/sshd_config
+  # - sed -i -e '/^#MaxAuthTries/s/^.*$/MaxAuthTries 2/' /etc/ssh/sshd_config
   - sed -i -e '/^#AuthorizedKeysFile/s/^.*$/AuthorizedKeysFile .ssh\/authorized_keys/' /etc/ssh/sshd_config
   # Change default port for SSH (you also need to change the port specified in /etc/fail2ban/jail.local)
   # - sed -i 's/[#]*Port 22/Port 4422/g' /etc/ssh/sshd_config
@@ -106,6 +106,6 @@ runcmd:
   # Apply changes
   - systemctl restart sshd
   # Switch to new user
-  - su - ubuntu
+  - su - matt
   # Run
   - bash /home/ubuntu/init.sh
