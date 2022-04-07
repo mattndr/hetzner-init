@@ -108,4 +108,4 @@ runcmd:
   # Switch to new user
   - su - matt
   # Run
-  - bash /home/matt/init.sh
+  # - bash /home/matt/init.sh
