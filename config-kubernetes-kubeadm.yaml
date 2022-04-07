@@ -16,9 +16,9 @@ packages:
 package_update: true
 package_upgrade: false
 write_files:
-  - path: /init/init.sh
+  - path: /home/matt/init/init.sh
     permissions: '0700'
-    # owner: matt
+    #owner: matt:sudo
     content: |
       #!/bin/bash
 
@@ -107,8 +107,9 @@ runcmd:
 # Switch to new user
   - su - matt
 # Join the RKE2 cluster
-  - chown matt:matt /init/init.sh
-  - bash /init/init.sh
+  - chown -R matt:sudo /home/matt/init
+  - bash home/matt/init/init.sh
+
 
 
 # #cloud-config
