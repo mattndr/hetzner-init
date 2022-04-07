@@ -16,70 +16,70 @@ packages:
 package_update: true
 package_upgrade: false
 write_files:
- - path: /home/matt/init.sh
-   permissions: '0700'
-   owner: matt
-   content: |
-     #!/bin/bash
+  - path: /home/matt/init.sh
+    permissions: '0700'
+    owner: matt
+    content: |
+      #!/bin/bash
 
-     export DEBIAN_FRONTEND=noninteractive
-     export K8S_VERSION=1.22.5
-     export CONTAINERD_VERSION=1.5.8
+      export DEBIAN_FRONTEND=noninteractive
+      export K8S_VERSION=1.22.5
+      export CONTAINERD_VERSION=1.5.8
 
-     ################################################
+      ################################################
 
-     ## Make sure that required modules are loaded
-     sudo modprobe br_netfilter
-     sudo modprobe overlay
+      ## Make sure that required modules are loaded
+      sudo modprobe br_netfilter
+      sudo modprobe overlay
 
-     ## Let iptables see bridged traffic
-     cat <<EOF | sudo tee /etc/modules-load.d/k8s.conf
-     br_netfilter
-     EOF
+      ## Let iptables see bridged traffic
+      cat <<EOF | sudo tee /etc/modules-load.d/k8s.conf
+      br_netfilter
+      EOF
 
-     cat <<EOF | sudo tee /etc/sysctl.d/k8s.conf
-     net.bridge.bridge-nf-call-ip6tables = 1
-     net.bridge.bridge-nf-call-iptables = 1
-     EOF
+      cat <<EOF | sudo tee /etc/sysctl.d/k8s.conf
+      net.bridge.bridge-nf-call-ip6tables = 1
+      net.bridge.bridge-nf-call-iptables = 1
+      EOF
 
-     ## Containerd prerequisites
-     cat <<EOF | sudo tee /etc/modules-load.d/containerd.conf
-     overlay
-     br_netfilter
-     EOF
+      ## Containerd prerequisites
+      cat <<EOF | sudo tee /etc/modules-load.d/containerd.conf
+      overlay
+      br_netfilter
+      EOF
 
-     # Setup required sysctl params, these persist across reboots.
-     cat <<EOF | sudo tee /etc/sysctl.d/99-kubernetes-cri.conf
-     net.bridge.bridge-nf-call-iptables  = 1
-     net.ipv4.ip_forward                 = 1
-     net.bridge.bridge-nf-call-ip6tables = 1
-     EOF
+      # Setup required sysctl params, these persist across reboots.
+      cat <<EOF | sudo tee /etc/sysctl.d/99-kubernetes-cri.conf
+      net.bridge.bridge-nf-call-iptables  = 1
+      net.ipv4.ip_forward                 = 1
+      net.bridge.bridge-nf-call-ip6tables = 1
+      EOF
 
-     ## Apply sysctl params without reboot
-     sudo sysctl --system
+      ## Apply sysctl params without reboot
+      sudo sysctl --system
 
-     ## Containerd
-     wget https://github.com/containerd/containerd/releases/download/v$CONTAINERD_VERSION/cri-containerd-cni-$CONTAINERD_VERSION-linux-amd64.tar.gz
-     sudo tar --no-overwrite-dir -C / -xzf cri-containerd-cni-$CONTAINERD_VERSION-linux-amd64.tar.gz
-     sudo systemctl daemon-reload
-     sudo systemctl enable --now containerd
+      ## Containerd
+      wget https://github.com/containerd/containerd/releases/download/v$CONTAINERD_VERSION/cri-containerd-cni-$CONTAINERD_VERSION-linux-amd64.tar.gz
+      sudo tar --no-overwrite-dir -C / -xzf cri-containerd-cni-$CONTAINERD_VERSION-linux-amd64.tar.gz
+      sudo systemctl daemon-reload
+      sudo systemctl enable --now containerd
 
-     sleep 5
-     sudo mkdir -p /etc/containerd
-     containerd config default | sudo tee /etc/containerd/config.toml
-     # Use the systemd cgroup driver
-     sudo sed -i 's/SystemdCgroup = false/SystemdCgroup = true/' /etc/containerd/config.toml
+      sleep 5
+      sudo mkdir -p /etc/containerd
+      containerd config default | sudo tee /etc/containerd/config.toml
+      # Use the systemd cgroup driver
+      sudo sed -i 's/SystemdCgroup = false/SystemdCgroup = true/' /etc/containerd/config.toml
 
-     sudo systemctl restart containerd
+      sudo systemctl restart containerd
 
-     ## Kubelet, kubeadm, kubectl
-     sudo apt-get install -y apt-transport-https ca-certificates curl
-     sudo curl -fsSLo /usr/share/keyrings/kubernetes-archive-keyring.gpg https://packages.cloud.google.com/apt/doc/apt-key.gpg
-     echo "deb [signed-by=/usr/share/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-xenial main" | sudo tee /etc/apt/sources.list.d/kubernetes.list
+      ## Kubelet, kubeadm, kubectl
+      sudo apt-get install -y apt-transport-https ca-certificates curl
+      sudo curl -fsSLo /usr/share/keyrings/kubernetes-archive-keyring.gpg https://packages.cloud.google.com/apt/doc/apt-key.gpg
+      echo "deb [signed-by=/usr/share/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-xenial main" | sudo tee /etc/apt/sources.list.d/kubernetes.list
 
-     sudo apt-get update
-     sudo apt-get install -y kubelet=$K8S_VERSION-00 kubeadm=$K8S_VERSION-00 kubectl=$K8S_VERSION-00
-     sudo apt-mark hold kubelet kubeadm kubectl
+      sudo apt-get update
+      sudo apt-get install -y kubelet=$K8S_VERSION-00 kubeadm=$K8S_VERSION-00 kubectl=$K8S_VERSION-00
+      sudo apt-mark hold kubelet kubeadm kubectl
 runcmd:
 # https://community.hetzner.com/tutorials/securing-ssh
   - cp /etc/fail2ban/jail.conf /etc/fail2ban/jail.local
