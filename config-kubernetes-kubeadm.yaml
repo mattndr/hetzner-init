@@ -20,7 +20,7 @@ write_files:
     permissions: '0700'
     content: |
       #!/bin/bash
-
+      
       export DEBIAN_FRONTEND=noninteractive
       export K8S_VERSION=1.22.5
       export CONTAINERD_VERSION=1.5.8
@@ -60,16 +60,12 @@ write_files:
       ## Containerd
       wget https://github.com/containerd/containerd/releases/download/v$CONTAINERD_VERSION/cri-containerd-cni-$CONTAINERD_VERSION-linux-amd64.tar.gz
       sudo tar --no-overwrite-dir -C / -xzf cri-containerd-cni-$CONTAINERD_VERSION-linux-amd64.tar.gz
-      sudo systemctl daemon-reload
-      sudo systemctl enable --now containerd
-
-      sleep 5
       sudo mkdir -p /etc/containerd
       containerd config default | sudo tee /etc/containerd/config.toml
       # Use the systemd cgroup driver
       sudo sed -i 's/SystemdCgroup = false/SystemdCgroup = true/' /etc/containerd/config.toml
-
-      sudo systemctl restart containerd
+      sudo systemctl daemon-reload
+      sudo systemctl enable --now containerd
 
       ## Kubelet, kubeadm, kubectl
       sudo apt-get install -y apt-transport-https ca-certificates curl
@@ -79,6 +75,7 @@ write_files:
       sudo apt-get update
       sudo apt-get install -y kubelet=$K8S_VERSION-00 kubeadm=$K8S_VERSION-00 kubectl=$K8S_VERSION-00
       sudo apt-mark hold kubelet kubeadm kubectl
+
 runcmd:
 # https://community.hetzner.com/tutorials/securing-ssh
   - cp /etc/fail2ban/jail.conf /etc/fail2ban/jail.local
@@ -103,122 +100,9 @@ runcmd:
   - sed -i '$a AllowUsers matt' /etc/ssh/sshd_config
 # Apply changes
   - systemctl restart sshd
-  - mv ./init.sh /home/matt/ && sudo chown matt:matt /home/matt/init.sh
+# Move script to the right folder and set the right ownership
+  - mv ./init.sh /home/matt/ && chown matt:matt /home/matt/init.sh
 # Switch to new user
   - su - matt
-# Join the RKE2 cluster
-#  - chown -R matt:matt /home/matt
-#   - bash home/matt/init/init.sh
-
-
-
-# #cloud-config
-# users:
-#   # Create user with sudo privileges
-#   - name: matt
-#     groups: sudo
-#     sudo: ALL=(ALL) NOPASSWD:ALL
-#     shell: /bin/bash
-#     # Authorized keys (public SSH keys) for the user
-#     ssh_authorized_keys:
-#       - ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQDGNaONLWhtY/2xoWDXkoo5z9b6Ezcs83BoD0V0ICALZ1Z3+RRWjYs8nI/3IVRZghcf5oL8VsvxZiU09QMZygPDtkPBvHhDibrBW5qpwAYaXw6qAzNt2XVgZ92zqhYuH8vrBezsWJ1XE9r/9XxAxKxim53OOMI8i8JKA2It5AMQblYBgNVmTKbsV8iVC1ZHK5DJwA1G4Nl/VngLg76uwBepwbU/PxM78TUQH9BzawXbBtA2GffQpL2vw17WDC3EE17+C5T0ekojUGr3VzY2r7N9ALikyw2dgp6RCN4oWWRauTpIIHRlrfvck0SbA403kGYX4bNqRaV247tO4vLjpXNkWJn7Owf7oACwJHETAmaiSK7rJBi18Odq+W68BMznj76VXe3NsuL/aGKp0j5s+8IOIAPgFGaAcWyZ4Vkw18EYESOWeV11W/oFvIWwiXmi7Ez3sr7zrrtz7ErcOifTJ6q0azt9T+NcdD9nA/mf8RrHSIIuaQC7EqhCc4cKx8YE9aJvVR9tMELFkDnZga2oEK+kuCZBs9MIVric4mEuTxbX/T5bPhLmttYG+3lYQN1na5MbSQeskEkXRIUrUfBBHyVYxfhDfnkMOX+VUN32+PsPQ2m9kPfUkl4WvBG4kPWQzwdgHNqHylnC7+pz3wbf2yOZVCvwZV9lk5H2Cd5upfmS+Q== microlab1
-# packages:
-#   - ntp
-#   - fail2ban
-#   - apparmor
-#   - apparmor-utils
-# package_update: true
-# package_upgrade: false
-# # write_files:
-# #   - path: /home/matt/init.sh
-# #     permissions: '0700'
-# #     #owner: matt
-# #     content: |
-# #       #!/bin/bash
-
-# #       export DEBIAN_FRONTEND=noninteractive
-# #       export K8S_VERSION=1.22.5
-# #       export CONTAINERD_VERSION=1.5.8
-
-# #       ################################################
-
-# #       ## Make sure that required modules are loaded
-# #       sudo modprobe br_netfilter
-# #       sudo modprobe overlay
-
-# #       ## Let iptables see bridged traffic
-# #       cat <<EOF | sudo tee /etc/modules-load.d/k8s.conf
-# #       br_netfilter
-# #       EOF
-
-# #       cat <<EOF | sudo tee /etc/sysctl.d/k8s.conf
-# #       net.bridge.bridge-nf-call-ip6tables = 1
-# #       net.bridge.bridge-nf-call-iptables = 1
-# #       EOF
-
-# #       ## Containerd prerequisites
-# #       cat <<EOF | sudo tee /etc/modules-load.d/containerd.conf
-# #       overlay
-# #       br_netfilter
-# #       EOF
-
-# #       # Setup required sysctl params, these persist across reboots.
-# #       cat <<EOF | sudo tee /etc/sysctl.d/99-kubernetes-cri.conf
-# #       net.bridge.bridge-nf-call-iptables  = 1
-# #       net.ipv4.ip_forward                 = 1
-# #       net.bridge.bridge-nf-call-ip6tables = 1
-# #       EOF
-
-# #       ## Apply sysctl params without reboot
-# #       sudo sysctl --system
-
-# #       ## Containerd
-# #       wget https://github.com/containerd/containerd/releases/download/v$CONTAINERD_VERSION/cri-containerd-cni-$CONTAINERD_VERSION-linux-amd64.tar.gz
-# #       sudo tar --no-overwrite-dir -C / -xzf cri-containerd-cni-$CONTAINERD_VERSION-linux-amd64.tar.gz
-# #       sudo systemctl daemon-reload
-# #       sudo systemctl enable --now containerd
-
-# #       sleep 5
-# #       sudo mkdir -p /etc/containerd
-# #       containerd config default | sudo tee /etc/containerd/config.toml
-# #       # Use the systemd cgroup driver
-# #       sudo sed -i 's/SystemdCgroup = false/SystemdCgroup = true/' /etc/containerd/config.toml
-
-# #       sudo systemctl restart containerd
-
-# #       ## Kubelet, kubeadm, kubectl
-# #       sudo apt-get install -y apt-transport-https ca-certificates curl
-# #       sudo curl -fsSLo /usr/share/keyrings/kubernetes-archive-keyring.gpg https://packages.cloud.google.com/apt/doc/apt-key.gpg
-# #       echo "deb [signed-by=/usr/share/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-xenial main" | sudo tee /etc/apt/sources.list.d/kubernetes.list
-
-# #       sudo apt-get update
-# #       sudo apt-get install -y kubelet=$K8S_VERSION-00 kubeadm=$K8S_VERSION-00 kubectl=$K8S_VERSION-00
-# #       sudo apt-mark hold kubelet kubeadm kubectl
-# runcmd:
-#   # https://community.hetzner.com/tutorials/securing-ssh
-#   - cp /etc/fail2ban/jail.conf /etc/fail2ban/jail.local
-#   - sed -i -e '/^\[sshd\]/s/^.*$/\[sshd\]\n\nenabled = true\nbanaction = iptables-multiport/' /etc/fail2ban/jail.local
-#   - sed -i -e 's/= ssh/= 22/g' /etc/fail2ban/jail.local
-#   - systemctl restart fail2ban
-#   - sed -i -e '/^#ClientAliveInterval/s/^.*$/ClientAliveInterval 300/' /etc/ssh/sshd_config
-#   - sed -i -e '/^#ClientAliveCountMax/s/^.*$/ClientAliveCountMax 1/' /etc/ssh/sshd_config
-#   - sed -i -e '/^PermitRootLogin/s/^.*$/PermitRootLogin no/' /etc/ssh/sshd_config
-#   - sed -i -e '/^PasswordAuthentication/s/^.*$/PasswordAuthentication no/' /etc/ssh/sshd_config
-#   # - sed -i -e '/^#MaxAuthTries/s/^.*$/MaxAuthTries 2/' /etc/ssh/sshd_config
-#   - sed -i -e '/^#AuthorizedKeysFile/s/^.*$/AuthorizedKeysFile .ssh\/authorized_keys/' /etc/ssh/sshd_config
-#   # Change default port for SSH (you also need to change the port specified in /etc/fail2ban/jail.local)
-#   # - sed -i 's/[#]*Port 22/Port 4422/g' /etc/ssh/sshd_config
-#   # Disables remote GUI view
-#   - sed -i -e '/^X11Forwarding/s/^.*$/X11Forwarding no/' /etc/ssh/sshd_config
-#   # Disables port forwarding
-#   - sed -i -e '/^#AllowTcpForwarding/s/^.*$/AllowTcpForwarding no/' /etc/ssh/sshd_config
-#   # Disables the forwarding of the SSH login
-#   - sed -i -e '/^#AllowAgentForwarding/s/^.*$/AllowAgentForwarding no/' /etc/ssh/sshd_config
-#   # Only selected users are allowed to establish an SSH connection to the server
-#   - sed -i '$a AllowUsers matt' /etc/ssh/sshd_config
-#   # Apply changes
-#   - systemctl restart sshd
-#   # Switch to new user
-#   - su - matt
-#   # Run
-#   # - bash /home/matt/init.sh
+# Run script
+  - bash init.sh
