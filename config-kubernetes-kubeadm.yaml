@@ -16,9 +16,8 @@ packages:
 package_update: true
 package_upgrade: false
 write_files:
-  - path: /home/matt/init/init.sh
+  - path: ./init.sh
     permissions: '0700'
-    owner: matt:matt
     content: |
       #!/bin/bash
 
@@ -104,10 +103,11 @@ runcmd:
   - sed -i '$a AllowUsers matt' /etc/ssh/sshd_config
 # Apply changes
   - systemctl restart sshd
+  - mv ./init.sh /home/matt/init.sh && sudo chown matt:matt /home/matt/init.sh
 # Switch to new user
   - su - matt
 # Join the RKE2 cluster
-#   - chown -R matt:sudo /home/matt/init
+#  - chown -R matt:matt /home/matt
 #   - bash home/matt/init/init.sh
 
 
