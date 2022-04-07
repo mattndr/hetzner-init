@@ -1,7 +1,7 @@
 #cloud-config
 users:
   # Create user with sudo privileges
-  - name: ubuntu
+  - name: matt
     groups: sudo
     sudo: ALL=(ALL) NOPASSWD:ALL
     shell: /bin/bash
@@ -40,6 +40,6 @@ runcmd:
 # Apply changes
   - systemctl restart sshd
 # Switch to new user
-  - su - ubuntu
+  - su - matt
 # Join the RKE2 cluster
-  - 
+#  - 
