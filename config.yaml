@@ -1,7 +1,7 @@
 #cloud-config
 users:
   # Create user with sudo privileges
-  - name: matt
+  - name: ubuntu
     groups: sudo
     sudo: ALL=(ALL) NOPASSWD:ALL
     shell: /bin/bash
@@ -36,10 +36,8 @@ runcmd:
 # Disables the forwarding of the SSH login
   - sed -i -e '/^#AllowAgentForwarding/s/^.*$/AllowAgentForwarding no/' /etc/ssh/sshd_config
 # Only selected users are allowed to establish an SSH connection to the server
-  - sed -i '$a AllowUsers matt' /etc/ssh/sshd_config
+  - sed -i '$a AllowUsers ubuntu' /etc/ssh/sshd_config
 # Apply changes
   - systemctl restart sshd
 # Switch to new user
-  - su - matt
-# Join the RKE2 cluster
-#  - 
+  - su - ubuntu
