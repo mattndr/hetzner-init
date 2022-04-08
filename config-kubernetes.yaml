@@ -1,7 +1,7 @@
 #cloud-config
 users:
   # Create user with sudo privileges
-  - name: matt
+  - name: ubuntu
     groups: sudo
     sudo: ALL=(ALL) NOPASSWD:ALL
     shell: /bin/bash
@@ -97,13 +97,12 @@ runcmd:
 # Disables the forwarding of the SSH login
   - sed -i -e '/^#AllowAgentForwarding/s/^.*$/AllowAgentForwarding no/' /etc/ssh/sshd_config
 # Only selected users are allowed to establish an SSH connection to the server
-  - sed -i '$a AllowUsers matt' /etc/ssh/sshd_config
+  - sed -i '$a AllowUsers ubuntu' /etc/ssh/sshd_config
 # Apply changes
   - systemctl restart sshd
 # Move script to the right folder and set the right ownership
-  - mv ./init.sh /home/matt/ && chown matt:matt /home/matt/init.sh
+  - mv ./init.sh /home/ubuntu/ && chown ubuntu:ubuntu /home/ubuntu/init.sh
 # Switch to new user
-  - su - matt
+  - su - ubuntu
 # Run script
-  - bash /home/matt/init.sh
-
+  - bash /home/ubuntu/init.sh
