@@ -5,7 +5,7 @@ users:
     groups: sudo
     sudo: ALL=(ALL) NOPASSWD:ALL
     shell: /bin/bash
-    # Authorized keys (public SSH keys) for the user 
+    # Authorized keys (public SSH keys) for the user
     ssh_authorized_keys:
       - ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQDGNaONLWhtY/2xoWDXkoo5z9b6Ezcs83BoD0V0ICALZ1Z3+RRWjYs8nI/3IVRZghcf5oL8VsvxZiU09QMZygPDtkPBvHhDibrBW5qpwAYaXw6qAzNt2XVgZ92zqhYuH8vrBezsWJ1XE9r/9XxAxKxim53OOMI8i8JKA2It5AMQblYBgNVmTKbsV8iVC1ZHK5DJwA1G4Nl/VngLg76uwBepwbU/PxM78TUQH9BzawXbBtA2GffQpL2vw17WDC3EE17+C5T0ekojUGr3VzY2r7N9ALikyw2dgp6RCN4oWWRauTpIIHRlrfvck0SbA403kGYX4bNqRaV247tO4vLjpXNkWJn7Owf7oACwJHETAmaiSK7rJBi18Odq+W68BMznj76VXe3NsuL/aGKp0j5s+8IOIAPgFGaAcWyZ4Vkw18EYESOWeV11W/oFvIWwiXmi7Ez3sr7zrrtz7ErcOifTJ6q0azt9T+NcdD9nA/mf8RrHSIIuaQC7EqhCc4cKx8YE9aJvVR9tMELFkDnZga2oEK+kuCZBs9MIVric4mEuTxbX/T5bPhLmttYG+3lYQN1na5MbSQeskEkXRIUrUfBBHyVYxfhDfnkMOX+VUN32+PsPQ2m9kPfUkl4WvBG4kPWQzwdgHNqHylnC7+pz3wbf2yOZVCvwZV9lk5H2Cd5upfmS+Q== microlab1
 packages:
@@ -18,22 +18,22 @@ package_update: true
 package_upgrade: false
 write_files:
   - path: ./init.sh
-    permissions: '0700'
+    permissions: "0700"
     content: |
       #!/bin/bash
-      
+
       export DEBIAN_FRONTEND=noninteractive
       export K8S_VERSION=1.23.5
       export CONTAINERD_VERSION=1.6.1
 
       ################################################
-      
+
       ## Run ntpdate sync every day
       cat <<EOF | sudo tee /etc/cron.daily/ntpdate
       ntpdate -s ntp.ubuntu.com
       EOF
       sudo chmod 755 /etc/cron.daily/ntpdate
-         
+
       ## Make sure that required modules are loaded
       sudo modprobe br_netfilter
       sudo modprobe overlay
@@ -75,16 +75,16 @@ write_files:
       sudo systemctl enable --now containerd
 
       ## Kubelet, kubeadm, kubectl
-      sudo apt-get install -y apt-transport-https ca-certificates curl
+      sudo apt install -y apt-transport-https ca-certificates curl
       sudo curl -fsSLo /usr/share/keyrings/kubernetes-archive-keyring.gpg https://packages.cloud.google.com/apt/doc/apt-key.gpg
       echo "deb [signed-by=/usr/share/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-xenial main" | sudo tee /etc/apt/sources.list.d/kubernetes.list
 
-      sudo apt-get update
-      sudo apt-get install -y kubelet=$K8S_VERSION-00 kubeadm=$K8S_VERSION-00 kubectl=$K8S_VERSION-00
+      sudo apt update
+      sudo apt install -y kubelet=$K8S_VERSION-00 kubeadm=$K8S_VERSION-00 kubectl=$K8S_VERSION-00
       sudo apt-mark hold kubelet kubeadm kubectl
 
 runcmd:
-# https://community.hetzner.com/tutorials/securing-ssh
+  # https://community.hetzner.com/tutorials/securing-ssh
   - cp /etc/fail2ban/jail.conf /etc/fail2ban/jail.local
   - sed -i -e '/^\[sshd\]/s/^.*$/\[sshd\]\n\nenabled = true\nbanaction = iptables-multiport/' /etc/fail2ban/jail.local
   - sed -i -e 's/= ssh/= 22/g' /etc/fail2ban/jail.local
@@ -95,21 +95,21 @@ runcmd:
   - sed -i -e '/^PasswordAuthentication/s/^.*$/PasswordAuthentication no/' /etc/ssh/sshd_config
   - sed -i -e '/^#MaxAuthTries/s/^.*$/MaxAuthTries 2/' /etc/ssh/sshd_config
   - sed -i -e '/^#AuthorizedKeysFile/s/^.*$/AuthorizedKeysFile .ssh\/authorized_keys/' /etc/ssh/sshd_config
-# Change default port for SSH (you also need to change the port specified in /etc/fail2ban/jail.local)
-# - sed -i 's/[#]*Port 22/Port 4422/g' /etc/ssh/sshd_config
-# Disables remote GUI view
+  # Change default port for SSH (you also need to change the port specified in /etc/fail2ban/jail.local)
+  # - sed -i 's/[#]*Port 22/Port 4422/g' /etc/ssh/sshd_config
+  # Disables remote GUI view
   - sed -i -e '/^X11Forwarding/s/^.*$/X11Forwarding no/' /etc/ssh/sshd_config
-# Disables port forwarding
+  # Disables port forwarding
   - sed -i -e '/^#AllowTcpForwarding/s/^.*$/AllowTcpForwarding no/' /etc/ssh/sshd_config
-# Disables the forwarding of the SSH login
+  # Disables the forwarding of the SSH login
   - sed -i -e '/^#AllowAgentForwarding/s/^.*$/AllowAgentForwarding no/' /etc/ssh/sshd_config
-# Only selected users are allowed to establish an SSH connection to the server
+  # Only selected users are allowed to establish an SSH connection to the server
   - sed -i '$a AllowUsers ubuntu' /etc/ssh/sshd_config
-# Apply changes
+  # Apply changes
   - systemctl restart sshd
-# Move script to the right folder and set the right ownership
+  # Move script to the right folder and set the right ownership
   - mv ./init.sh /home/ubuntu/ && chown ubuntu:ubuntu /home/ubuntu/init.sh
-# Switch to new user
+  # Switch to new user
   - su - ubuntu
-# Run script
+  # Run script
   - bash /home/ubuntu/init.sh
