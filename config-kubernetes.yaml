@@ -22,8 +22,8 @@ write_files:
       #!/bin/bash
       
       export DEBIAN_FRONTEND=noninteractive
-      export K8S_VERSION=1.22.5
-      export CONTAINERD_VERSION=1.5.8
+      export K8S_VERSION=1.23.5
+      export CONTAINERD_VERSION=1.6.1
 
       ################################################
 
