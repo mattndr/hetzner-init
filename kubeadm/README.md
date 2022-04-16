@@ -1,0 +1,39 @@
+## kubeadm init
+
+``` sudo kubeadm init --config=init-config.yaml ```
+
+Configuration example:
+```
+apiVersion: kubeadm.k8s.io/v1beta3
+kind: InitConfiguration
+localAPIEndpoint:
+  advertiseAddress: 10.0.0.2
+nodeRegistration:
+  kubeletExtraArgs:
+    node-ip: 10.0.0.2
+```
+
+## kubeadm join
+
+``` sudo kubeadm join --config join-config.yaml ```
+
+Configuration example:
+```
+apiVersion: kubeadm.k8s.io/v1beta3
+kind: JoinConfiguration
+nodeRegistration:
+  kubeletExtraArgs:
+    node-ip: 10.0.0.3
+discovery:
+  bootstrapToken:
+    apiServerEndpoint: 10.0.0.2:6443
+    token: <token>
+    caCertHashes:
+    - <sha> 
+    unsafeSkipCAVerification: false
+```
+
+## Get internal IP
+CIDR: 10.0.0.0/16
+
+``` ip route get 10.0.0.0 | sed -n '/src/{s/.*src *\([^ ]*\).*/\1/p;q}' ```
