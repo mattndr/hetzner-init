@@ -16,6 +16,11 @@ apiVersion: kubeadm.k8s.io/v1beta3
 kind: ClusterConfiguration
 networking:
   podSubnet: 10.244.0.0/16
+# When using a tcp Load Balancer 
+# apiServer:
+#   certSANs:
+#   - "static.14.10.233.167.clients.your-server.de"
+  
 ```
 
 ## kubeadm join
