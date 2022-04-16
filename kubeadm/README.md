@@ -16,7 +16,11 @@ apiVersion: kubeadm.k8s.io/v1beta3
 kind: ClusterConfiguration
 networking:
   podSubnet: 10.244.0.0/16
-# When using a tcp Load Balancer 
+# This is required when k8s nodes communicate through a
+# private network (like 10.0.0.0/16) and you want to
+# connect to the cluster from outside (public network).
+# The tcp Load Balancer exposes its own IP/DNS and
+# redirect requests to the private network.
 # apiServer:
 #   certSANs:
 #   - "static.14.10.233.167.clients.your-server.de"
