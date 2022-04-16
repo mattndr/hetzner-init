@@ -26,6 +26,9 @@ networking:
 #   - "static.14.10.233.167.clients.your-server.de"
   
 ```
+
+- Kubeadm init log - with certSANs defined
+
 ```
 apiserver serving cert is signed for DNS names [kubernetes kubernetes.default kubernetes.default.svc kubernetes.default.svc.cluster.local node-1 static.14.10.233.167.clients.your-server.de] and IPs [10.96.0.1 10.0.0.2]
 ```
