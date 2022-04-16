@@ -1,6 +1,6 @@
 ## kubeadm init
 
-``` sudo kubeadm init --config=init config.yaml ```
+``` sudo kubeadm init --config init-config.yaml ```
 
 Configuration example:
 ```
