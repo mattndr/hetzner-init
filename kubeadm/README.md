@@ -1,6 +1,6 @@
 ## kubeadm init
 
-``` sudo kubeadm init --config=init-config.yaml ```
+``` sudo kubeadm init --config=init config.yaml ```
 
 Configuration example:
 ```
@@ -11,6 +11,11 @@ localAPIEndpoint:
 nodeRegistration:
   kubeletExtraArgs:
     node-ip: 10.0.0.2
+---
+apiVersion: kubeadm.k8s.io/v1beta3
+kind: ClusterConfiguration
+networking:
+  podSubnet: 10.244.0.0/16
 ```
 
 ## kubeadm join
