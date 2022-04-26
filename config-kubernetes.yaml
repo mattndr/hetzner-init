@@ -14,6 +14,7 @@ packages:
   - fail2ban
   - apparmor
   - apparmor-utils
+  - wiregaurd
 package_update: true
 package_upgrade: false
 write_files:
